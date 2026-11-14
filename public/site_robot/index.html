@@ -88,7 +88,7 @@ a { color: var(--both); }
   </div>
 
   <div class="prose">
-    <p>Errors: RMS over the moving frames within reach (grey: out of reach). Ideal sensors; the exoskeleton is not the one in the paper, so the numbers differ. Model and data: Seth et al., <a href="https://simtk.org/projects/thoracoscapular">simtk.org/projects/thoracoscapular</a>.</p>
+    <p>Errors: RMS over the moving frames within the robot's reach. Ideal sensors; the exoskeleton is not the one in the paper, so the numbers differ. Model and data: Seth et al., <a href="https://simtk.org/projects/thoracoscapular">simtk.org/projects/thoracoscapular</a>.</p>
   </div>
   
 </main>
@@ -212,8 +212,6 @@ function plot(el, keys, lims, unit) {
   lo = Math.floor(lo / step) * step; hi = Math.ceil(hi / step) * step;
   const X = (t) => L + (t - t0) / (t1 - t0) * (W - L - Rr), Y = (v) => Tp + (1 - (v - lo) / (hi - lo)) * (H - Tp - B);
   let g = "";
-  // unscored (unreached) regions
-  let start = null; S.scored.forEach((s, i) => { if (!s && start === null) start = i; if ((s || i === S.scored.length - 1) && start !== null) { g += `<rect x="${X(S.t[start])}" y="${Tp}" width="${Math.max(1, X(S.t[i]) - X(S.t[start]))}" height="${H - Tp - B}" fill="${css("--line")}" opacity="0.6"/>`; start = null; } });
   for (let v = lo; v <= hi + 1e-9; v += step) g += `<line x1="${L}" x2="${W - Rr}" y1="${Y(v)}" y2="${Y(v)}" stroke="${css("--line")}"/><text x="${L - 6}" y="${Y(v) + 4}" text-anchor="end" font-size="12" fill="${css("--muted")}">${v}</text>`;
   const tick = t1 - t0 > 8 ? 2 : 1;
   for (let t = Math.ceil(t0); t <= t1; t += tick) g += `<text x="${X(t)}" y="${H - 10}" text-anchor="middle" font-size="12" fill="${css("--muted")}">${t}</text>`;
@@ -232,7 +230,7 @@ function drawPlots() {
   plot($("plotElev"), [["centre_ac", css("--gh"), 1.4, true], ...METHODS.map((m) => [m.key + "_ac", m.colour, w(m.key)]), ["true_ac", ink, 2.4]], null, "mm");
   plot($("plotUp"), [...METHODS.map((m) => [m.key + "_up", m.colour, w(m.key)]), ["true_up", ink, 2.4]], null, "deg");
   const sw = (c, dash) => `<svg width="22" height="10"><line x1="0" y1="5" x2="22" y2="5" stroke="${c}" stroke-width="2.4" ${dash ? 'stroke-dasharray="5 3"' : ""}/></svg>`;
-  $("legElev").innerHTML = `<span>${sw(ink)}ground truth</span><span>${sw(css("--gh"), true)}robot GH centre</span>` + METHODS.map((m) => `<span>${sw(m.colour)}${m.label}</span>`).join("") + `<span><svg width="14" height="10"><rect width="14" height="10" fill="${css("--line")}"/></svg>out of reach</span>`;
+  $("legElev").innerHTML = `<span>${sw(ink)}ground truth</span><span>${sw(css("--gh"), true)}robot GH centre</span>` + METHODS.map((m) => `<span>${sw(m.colour)}${m.label}</span>`).join("");
   $("legUp").innerHTML = `<span>${sw(ink)}ground truth</span>` + METHODS.map((m) => `<span>${sw(m.colour)}${m.label}</span>`).join("");
 }
 
