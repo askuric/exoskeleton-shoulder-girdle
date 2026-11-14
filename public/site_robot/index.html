@@ -256,7 +256,7 @@ function resize() { const w = host.clientWidth, h = host.clientHeight; renderer.
 new ResizeObserver(resize).observe(host);
 const A = D.body_axes, gh0 = V(D.gh0);
 const target = gh0.clone().addScaledVector(V(A.up), -0.12).addScaledVector(V(A.right), -0.08);
-camera.position.copy(target).addScaledVector(V(A.anterior), 0.95).addScaledVector(V(A.right), 0.75).addScaledVector(V(A.up), 0.3);
+camera.position.copy(target).addScaledVector(V(A.anterior), 1.2).addScaledVector(V(A.up), 0.25);
 controls.target.copy(target); controls.update();
 
 $("frame").max = T().frames.length - 1;
