@@ -58,7 +58,7 @@ a { color: var(--both); }
 <main>
   <p style="margin:0 0 12px;font-size:14px"><a href="../" style="color:var(--muted);text-decoration:none">← Overview</a></p>
   <h1>Shoulder girdle estimation from robot and IMU data</h1>
-  <p class="lede">A generic exoskeleton follows recorded movements. The girdle is estimated from its cuffs (purple), with a thorax IMU (orange), and with a scapula IMU too (blue). Bone colour: truth.</p>
+  <p class="lede">A generic exoskeleton follows recorded movements. The girdle is estimated from its cuffs (purple), with a thorax IMU (orange), and with a scapula IMU too (blue). White: ground truth.</p>
 
   <div class="grid">
     <div class="card" id="view"><div id="loading">Loading…</div><div class="hint">Drag to orbit, scroll to zoom</div></div>
@@ -232,8 +232,8 @@ function drawPlots() {
   plot($("plotElev"), [["centre_ac", css("--gh"), 1.4, true], ...METHODS.map((m) => [m.key + "_ac", m.colour, w(m.key)]), ["true_ac", ink, 2.4]], null, "mm");
   plot($("plotUp"), [...METHODS.map((m) => [m.key + "_up", m.colour, w(m.key)]), ["true_up", ink, 2.4]], null, "deg");
   const sw = (c, dash) => `<svg width="22" height="10"><line x1="0" y1="5" x2="22" y2="5" stroke="${c}" stroke-width="2.4" ${dash ? 'stroke-dasharray="5 3"' : ""}/></svg>`;
-  $("legElev").innerHTML = `<span>${sw(ink)}truth</span><span>${sw(css("--gh"), true)}robot GH centre</span>` + METHODS.map((m) => `<span>${sw(m.colour)}${m.label}</span>`).join("") + `<span><svg width="14" height="10"><rect width="14" height="10" fill="${css("--line")}"/></svg>out of reach</span>`;
-  $("legUp").innerHTML = `<span>${sw(ink)}truth</span>` + METHODS.map((m) => `<span>${sw(m.colour)}${m.label}</span>`).join("");
+  $("legElev").innerHTML = `<span>${sw(ink)}ground truth</span><span>${sw(css("--gh"), true)}robot GH centre</span>` + METHODS.map((m) => `<span>${sw(m.colour)}${m.label}</span>`).join("") + `<span><svg width="14" height="10"><rect width="14" height="10" fill="${css("--line")}"/></svg>out of reach</span>`;
+  $("legUp").innerHTML = `<span>${sw(ink)}ground truth</span>` + METHODS.map((m) => `<span>${sw(m.colour)}${m.label}</span>`).join("");
 }
 
 function renderMethods() {
@@ -246,7 +246,7 @@ function updatePanel() {
   const f = T().frames[frameIdx], S = T().series, i = nearestSeries(f.t);
   $("timeLabel").textContent = f.t.toFixed(2) + " s"; $("elevLabel").textContent = f.elev.toFixed(0) + "°";
   const row = (lab, c, v) => `<span><span class="dot" style="background:${c};display:inline-block;margin-right:6px"></span>${lab}</span><span class="num">${v.toFixed(0)} mm</span>`;
-  $("readout").innerHTML = row("truth", css("--ink"), S.true_ac[i]) + row("robot GH centre", css("--gh"), S.centre_ac[i]) + METHODS.map((m) => row(m.label, m.colour, S[m.key + "_ac"][i])).join("");
+  $("readout").innerHTML = row("ground truth", css("--ink"), S.true_ac[i]) + row("robot GH centre", css("--gh"), S.centre_ac[i]) + METHODS.map((m) => row(m.label, m.colour, S[m.key + "_ac"][i])).join("");
   drawPlots();
 }
 
