@@ -13,3 +13,5 @@ The pages are static (HTML, JSON, three.js from jsDelivr) and are deployed with 
 ```
 cd public && python -m http.server
 ```
+
+The interactive visualisations were developed with the help of AI models (Claude, Anthropic).
