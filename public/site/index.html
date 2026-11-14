@@ -165,8 +165,33 @@ function lerpPose(a, b, t) {
   qa.slerp(qb, t);
   return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t, qa.x, qa.y, qa.z, qa.w];
 }
-// cuff cylinders (three.js: along y) lie along the segment, which is the cuff frame's z axis
-const cuffAlong = new THREE.Matrix4().makeRotationX(Math.PI / 2);
+// bone-fixed placements, fitted once on the first frame (thorax frame: y up)
+function meshPoints(name, M) {
+  const v = b64(D.meshes.find((m) => m.name === name).vertices, Float32Array), out = [];
+  for (let i = 0; i < v.length; i += 3) { const p = new THREE.Vector3(v[i], v[i + 1], v[i + 2]); if (M) p.applyMatrix4(M); out.push(p); }
+  return out;
+}
+function longAxis(pts) { // centroid and first principal axis of a point cloud
+  const c = new THREE.Vector3(); pts.forEach((p) => c.add(p)); c.divideScalar(pts.length);
+  const C = new THREE.Matrix3().set(0, 0, 0, 0, 0, 0, 0, 0, 0), e = C.elements; // symmetric
+  for (const p of pts) { const d = [p.x - c.x, p.y - c.y, p.z - c.z]; for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) e[3 * i + j] += d[i] * d[j]; }
+  const a = new THREE.Vector3(0, 1, 0); for (let it = 0; it < 60; it++) a.applyMatrix3(C).normalize();
+  return { c, a };
+}
+const REF = D.movements.abduction.frames[0], inv = (j) => mat4(REF.joints[j]).invert();
+// cuffs centred on the bone axis (humerus; ulna and radius together), at the cuff's position along the bone
+const cuffLocal = [longAxis(meshPoints("humerus")), longAxis([...meshPoints("ulna"), ...meshPoints("radius", inv(4).multiply(mat4(REF.joints[5])))])]
+  .map(({ c, a }, k) => {
+    const p = new THREE.Vector3().fromArray(REF.cuffs[k]).applyMatrix4(inv(k ? 4 : 3));
+    return new THREE.Matrix4().compose(c.clone().addScaledVector(a, p.sub(c).dot(a)), new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), a), new THREE.Vector3(1, 1, 1));
+  });
+// scapula IMU drawn on top of the acromion, above the GH centre (only its orientation enters the analysis)
+const imuLocal = (() => {
+  const iS = inv(2), gh = new THREE.Vector3().setFromMatrixPosition(mat4(REF.joints[3])).applyMatrix4(iS), up = new THREE.Vector3(0, 1, 0).transformDirection(iS);
+  let best = null, top = -Infinity;
+  for (const p of meshPoints("scapula")) { const d = p.clone().sub(gh), h = d.dot(up); if (h > top && d.addScaledVector(up, -h).length() < 0.007) { top = h; best = p; } }
+  const L = iS.clone().multiply(mat4(REF.imu)); if (best) L.setPosition(best.addScaledVector(up, 0.007)); return L;
+})();
 
 // ---------- state ----------
 let mv = "abduction", frameIdx = 15, rocking = false, playing = false, imuOn = true, phase = 0;
@@ -183,17 +208,15 @@ function apply() {
   const pose = rocking ? rockSample(f, s) : { joints: f.joints, imu: f.imu };
   pose.joints.forEach((p, j) => groups[j].matrix.copy(mat4(p)));
   for (const [j, g] of ghostGroups) { g.visible = rocking; g.matrix.copy(mat4(f.joints[j])); }
-  imuBox.visible = imuOn; imuBox.matrix.copy(mat4(pose.imu));
+  imuBox.visible = imuOn; imuBox.matrix.copy(mat4(pose.joints[D.joint_names.indexOf("scapulothoracic")]).multiply(imuLocal));
   // points: move the marked points with their bodies (scapula for acromion and inferior angle; GH centre with the scapula)
   const scapJ = D.joint_names.indexOf("scapulothoracic");
   const rel = new THREE.Matrix4().copy(mat4(pose.joints[scapJ])).multiply(mat4(f.joints[scapJ]).invert());
   ghDot.position.fromArray(f.gh).applyMatrix4(rel);
   acDot.position.fromArray(f.ac).applyMatrix4(rel);
   iaDot.position.fromArray(f.ia).applyMatrix4(rel);
-  // cuffs: carried by the arm, which follows the GH centre
-  const humJ = D.joint_names.indexOf("GlenoHumeral");
-  const relArm = new THREE.Matrix4().copy(mat4(pose.joints[humJ])).multiply(mat4(f.joints[humJ]).invert());
-  f.cuffs.forEach((c, k) => cuffs[k].matrix.copy(relArm.clone().multiply(mat4(c)).multiply(cuffAlong)));
+  // cuffs: on the humerus and the forearm
+  cuffLocal.forEach((L, k) => cuffs[k].matrix.copy(mat4(pose.joints[k ? 4 : 3]).multiply(L)));
   scene.updateMatrixWorld(true);
 }
 
@@ -245,8 +268,8 @@ function resize() { const w = host.clientWidth, h = host.clientHeight; renderer.
 new ResizeObserver(resize).observe(host);
 // camera: in front of the subject (thorax frame: x anterior, y up, z right)
 $("frame").max = frames().length - 1; $("frame").value = frameIdx;
-const target = new THREE.Vector3().fromArray(frames()[15].gh).add(new THREE.Vector3(0, -0.12, -0.08));
-camera.position.copy(target).add(new THREE.Vector3(1.05, 0.2, 0.0)); controls.target.copy(target); controls.update();
+const target = new THREE.Vector3().fromArray(frames()[15].gh).add(new THREE.Vector3(0, -0.15, -0.12));
+camera.position.copy(target).add(new THREE.Vector3(1.55, 0.25, 0.0)); controls.target.copy(target); controls.update();
 
 let last = performance.now(), acc = 0;
 function tick(now) {

@@ -150,6 +150,15 @@ function place(mesh, a, b, r) { // cylinder from a to b with radius r
   mesh.quaternion.setFromUnitVectors(yAxis, d.clone().normalize()); mesh.scale.set(r, L, r);
 }
 const mat4 = (p) => new THREE.Matrix4().compose(V(p), new THREE.Quaternion(p[3], p[4], p[5], p[6]), new THREE.Vector3(1, 1, 1));
+// scapula IMU drawn on top of the acromion, above the GH centre (fitted once on the first frame; the estimation uses only its orientation)
+const scapImuLocal = (() => {
+  const ref = Object.values(D.trials)[0].frames[0], iS = mat4(ref.human[2]).invert();
+  const gh = new THREE.Vector3().setFromMatrixPosition(mat4(ref.human[3])).applyMatrix4(iS), up = V(D.body_axes.up).transformDirection(iS);
+  const v = b64(D.meshes.find((m) => m.name === "scapula").vertices, Float32Array);
+  let best = null, top = -Infinity;
+  for (let i = 0; i < v.length; i += 3) { const p = new THREE.Vector3(v[i], v[i + 1], v[i + 2]), d = p.clone().sub(gh), h = d.dot(up); if (h > top && d.addScaledVector(up, -h).length() < 0.007) { top = h; best = p; } }
+  const L = iS.clone().multiply(mat4(ref.imus[1])); if (best) L.setPosition(best.addScaledVector(up, 0.007)); return L;
+})();
 const cuffAlong = new THREE.Matrix4().makeRotationX(Math.PI / 2);
 
 // ---------- state ----------
@@ -195,7 +204,7 @@ function apply() {
   drawRobot(f.robot);
   // IMUs of the shown method: thorax IMU on the sternum side, scapula IMU on the scapula (true pose, as measured)
   imus[0].visible = method !== "robot"; imus[1].visible = method === "both";
-  f.imus.forEach((p, k) => imus[k].matrix.copy(mat4(p)));
+  imus[0].matrix.copy(mat4(f.imus[0])); imus[1].matrix.copy(mat4(f.human[2]).multiply(scapImuLocal));
   scene.updateMatrixWorld(true);
 }
 
@@ -255,8 +264,8 @@ $("play").addEventListener("click", () => { playing = !playing; $("play").setAtt
 function resize() { const w = host.clientWidth, h = host.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
 new ResizeObserver(resize).observe(host);
 const A = D.body_axes, gh0 = V(D.gh0);
-const target = gh0.clone().addScaledVector(V(A.up), -0.12).addScaledVector(V(A.right), -0.08);
-camera.position.copy(target).addScaledVector(V(A.anterior), 1.2).addScaledVector(V(A.up), 0.25);
+const target = gh0.clone().addScaledVector(V(A.up), -0.1).addScaledVector(V(A.right), -0.12);
+camera.position.copy(target).addScaledVector(V(A.anterior), 1.7).addScaledVector(V(A.up), 0.3);
 controls.target.copy(target); controls.update();
 
 $("frame").max = T().frames.length - 1;
