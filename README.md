@@ -8,7 +8,7 @@ Interactive companion pages to an ICORR paper (in review) on estimating shoulder
 
 Simulation only. The exoskeleton is generic, not a commercial or research device. The model, bone meshes and motions are from Seth A, Matias R, Veloso AP, Delp SL (2016), *A biomechanical model of the scapulothoracic joint to accurately capture scapular kinematics during shoulder movements*, PLoS ONE 11(1): e0141028, [simtk.org/projects/thoracoscapular](https://simtk.org/projects/thoracoscapular).
 
-The pages are static (HTML, JSON, three.js from jsDelivr) and are deployed with GitLab Pages (`.gitlab-ci.yml`). To view locally:
+The pages are static (HTML, JSON, three.js from jsDelivr) and are deployed with GitHub Pages (`.github/workflows/pages.yml`). To view locally:
 
 ```
 cd public && python -m http.server
