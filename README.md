@@ -1,8 +1,8 @@
 # Shoulder girdle estimation with an upper-limb exoskeleton
 
 Interactive companion pages to an ICORR paper (in review) on estimating shoulder girdle elevation with an upper-limb exoskeleton.
-**Live pages: [askuric.github.io/exoskeleton-shoulder-girdle](https://askuric.github.io/exoskeleton-shoulder-girdle/)**
 
+**Live pages: [askuric.github.io/exoskeleton-shoulder-girdle](https://askuric.github.io/exoskeleton-shoulder-girdle/)**
 
 - `public/index.html`: landing page
 - `public/site/`: observability analysis (singular values of the GH-centre Jacobian, least observable girdle motion)
