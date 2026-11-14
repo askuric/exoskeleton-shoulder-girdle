@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shoulder Girdle Estimation</title>
+<meta name="description" content="Interactive companion to the ICORR paper on estimating shoulder girdle elevation with an upper-limb exoskeleton.">
+<style>
+:root { --bg: #fbfbf9; --panel: #ffffff; --ink: #1a1a19; --muted: #6b6a63; --line: #e6e5df; --accent: #2a78d6; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #161615; --panel: #1f1f1d; --ink: #ecebe6; --muted: #a3a29b; --line: #34332f; }
+}
+:root[data-theme="dark"] { --bg: #161615; --panel: #1f1f1d; --ink: #ecebe6; --muted: #a3a29b; --line: #34332f; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 860px; margin: 0 auto; padding: 48px 16px 64px; }
+h1 { font-size: 1.75rem; line-height: 1.25; margin: 0 0 12px; letter-spacing: -0.01em; }
+.lede { color: var(--muted); margin: 0 0 32px; }
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 640px) { .cards { grid-template-columns: 1fr; } }
+a.card { display: block; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px; color: inherit; text-decoration: none; }
+a.card:hover { border-color: var(--accent); }
+a.card h2 { font-size: 1.1rem; margin: 0 0 8px; }
+a.card p { margin: 0 0 12px; color: var(--muted); font-size: 15px; }
+a.card span { color: var(--accent); font-weight: 600; font-size: 15px; }
+.prose { margin-top: 40px; font-size: 15px; color: var(--muted); }
+.prose p { margin: 0 0 10px; }
+.prose a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Shoulder girdle estimation with an upper-limb exoskeleton</h1>
+  <p class="lede">Observability and estimation of shoulder girdle motion from the cuff poses of an arm-attached exoskeleton, with and without IMUs.</p>
+
+  <div class="cards">
+    <a class="card" href="site/">
+      <h2>1. Observability analysis</h2>
+      <p>Singular values of the GH-centre Jacobian and the least observable girdle motion.</p>
+      <span>Observability →</span>
+    </a>
+    <a class="card" href="site_robot/">
+      <h2>2. Estimation from robot and IMU data</h2>
+      <p>Model IK from the cuff poses, with a thorax IMU, and with a thorax and a scapula IMU.</p>
+      <span>Estimation →</span>
+    </a>
+  </div>
+
+  <div class="prose">
+    <p>Companion to an ICORR paper (in review). Simulation only, generic exoskeleton. Model and data: Seth et al., <a href="https://simtk.org/projects/thoracoscapular">simtk.org/projects/thoracoscapular</a>.</p>
+  </div>
+</main>
+</body>
+</html>

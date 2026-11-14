@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shoulder Girdle Observability</title>
+<meta name="description" content="Why an arm-attached exoskeleton cannot see the scapula's upward rotation, and how a gravity-only IMU fixes it.">
+<style>
+:root {
+  --bg: #fbfbf9; --panel: #ffffff; --ink: #1a1a19; --muted: #6b6a63; --line: #e6e5df;
+  --gh: #1baf7a; --robot: #6250d6; --imu: #2a78d6; --bone: #e9e5dc; --girdle: #c9d8f0; --accent: #e8221b; --metal: #5d6168;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #161615; --panel: #1f1f1d; --ink: #ecebe6; --muted: #a3a29b; --line: #34332f; --bone: #d9d4c8; --girdle: #8fb0e6; --metal: #8d929a; }
+}
+:root[data-theme="dark"] { --bg: #161615; --panel: #1f1f1d; --ink: #ecebe6; --muted: #a3a29b; --line: #34332f; --bone: #d9d4c8; --girdle: #8fb0e6; --metal: #8d929a; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 1120px; margin: 0 auto; padding: 32px 16px 64px; }
+h1 { font-size: 1.75rem; line-height: 1.25; margin: 0 0 8px; letter-spacing: -0.01em; }
+.lede { color: var(--muted); max-width: 760px; margin: 0 0 24px; }
+.grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+#view { position: relative; height: 520px; padding: 0; overflow: hidden; }
+@media (max-width: 820px) { #view { height: 400px; } }
+#view canvas { display: block; width: 100%; height: 100%; }
+#view .hint { position: absolute; left: 12px; bottom: 10px; font-size: 12px; color: var(--muted); pointer-events: none; }
+#loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; background: transparent; color: var(--ink); padding: 6px 12px; font: inherit; font-size: 14px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+button.big { width: 100%; border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 8px; padding: 10px 12px; font: inherit; font-weight: 600; cursor: pointer; }
+button.big[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+label.slider { display: block; font-size: 14px; color: var(--muted); margin-bottom: 14px; }
+label.slider input { width: 100%; }
+label.check { display: flex; gap: 8px; align-items: center; font-size: 14px; margin-bottom: 14px; cursor: pointer; }
+.k { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 18px 0 8px; }
+.bars { display: grid; grid-template-columns: 74px 1fr 52px; gap: 6px 8px; align-items: center; font-size: 13px; }
+.bar { height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; }
+.bar > i { display: block; height: 100%; border-radius: 5px; }
+.num { font-variant-numeric: tabular-nums; text-align: right; }
+.readout { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font-size: 14px; }
+.readout .num { font-weight: 600; }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+#plot svg { width: 100%; height: auto; display: block; }
+#plot .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin-top: 6px; }
+.prose { max-width: 760px; }
+.prose h2 { font-size: 1.15rem; margin: 32px 0 8px; }
+.prose p { margin: 0 0 12px; }
+footer { color: var(--muted); font-size: 13px; margin-top: 40px; border-top: 1px solid var(--line); padding-top: 16px; }
+a { color: var(--imu); }
+</style>
+</head>
+<body>
+<main>
+  <p style="margin:0 0 12px;font-size:14px"><a href="../" style="color:var(--muted);text-decoration:none">← Overview</a></p>
+  <h1>Observability of the shoulder girdle</h1>
+  <p class="lede">The cuffs see the shoulder girdle only through the GH joint centre. Rotating the scapula about an axis near that centre barely moves it.</p>
+
+  <div class="grid">
+    <div class="card" id="view"><div id="loading">Loading model…</div><div class="hint">Drag to orbit, scroll to zoom</div></div>
+    <div class="card">
+      <div class="row">
+        <div class="seg" role="group" aria-label="Movement">
+          <button data-mv="abduction" aria-pressed="true">Abduction</button>
+          <button data-mv="flexion" aria-pressed="false">Flexion</button>
+        </div>
+        <div class="seg"><button id="play" aria-pressed="false">Play</button></div>
+      </div>
+      <label class="slider">Arm elevation: <b id="elevLabel">–</b>
+        <input id="frame" type="range" min="0" max="89" value="20">
+      </label>
+      <button class="big" id="rock" aria-pressed="false">Move along the least observable direction</button>
+      <label class="check" style="margin-top:12px"><input type="checkbox" id="imuToggle" checked> Scapula IMU (gravity only)</label>
+
+      <div class="k">Displacement for ±15° along this direction</div>
+      <div class="readout">
+        <span>Inferior angle</span><span class="num" id="r_ia">–</span>
+        <span>Acromion</span><span class="num" id="r_ac">–</span>
+        <span><span class="dot" style="background:var(--gh)"></span>GH centre and cuffs</span><span class="num" id="r_gh">–</span>
+        <span id="r_tilt_l"><span class="dot" style="background:var(--imu)"></span>Scapula IMU tilt</span><span class="num" id="r_tilt">–</span>
+      </div>
+
+      <div class="k">Singular values at this pose (mm/°)</div>
+      <div class="bars" id="bars"></div>
+    </div>
+  </div>
+
+  <div class="card" id="plot" style="margin-top:16px">
+    <div class="k" style="margin-top:0">Six dataset trials (mean, 95 % CI)</div>
+    <div id="plotSvg"></div>
+    <div class="legend">
+      <span><span class="dot" style="background:#b4b2ab"></span>σ₁, σ₂</span>
+      <span><span class="dot" style="background:var(--robot)"></span>σ₃, robot only</span>
+      <span id="leg_imu"><span class="dot" style="background:var(--imu)"></span>σ₃, + scapula IMU</span>
+    </div>
+  </div>
+
+  <div class="prose">
+    <p>σ₁ ≥ σ₂ ≥ σ₃: how far the GH centre moves per degree of girdle motion, thorax fixed. The scapula IMU is converted to the same scale (1° = 1 mm). Model and data: Seth et al., <a href="https://simtk.org/projects/thoracoscapular">simtk.org/projects/thoracoscapular</a>.</p>
+  </div>
+  
+</main>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+               "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const $ = (id) => document.getElementById(id);
+const D = await (await fetch("data.json")).json();
+$("loading").remove();
+// keep only the frames inside the elevation range of the sigma curves (where at least two trials have data), so the cursor stays on the plot
+for (const M of Object.values(D.movements)) {
+  const C = M.sigma_curves, ok = C.elev.filter((e, i) => C.s3.mean[i] != null);
+  M.range = [ok[0], ok[ok.length - 1]];
+  M.frames = M.frames.filter((f) => f.elev >= M.range[0] && f.elev <= M.range[1]);
+}
+
+// ---------- scene ----------
+const host = $("view");
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+host.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(32, 1, 0.01, 10);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8678, 1.6));
+const sun = new THREE.DirectionalLight(0xffffff, 1.4); sun.position.set(1, 2, 1.5); scene.add(sun);
+
+const b64 = (s, T) => { const bin = atob(s); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return new T(u.buffer); };
+const nJ = D.joint_names.length;
+const groups = [...Array(nJ)].map(() => { const g = new THREE.Group(); g.matrixAutoUpdate = false; scene.add(g); return g; });
+const ghostGroups = [];
+const GIRDLE = new Set(["clavicle", "scapula"]);
+const boneMat = new THREE.MeshStandardMaterial({ color: css("--bone"), roughness: 0.85 });
+const girdleMat = new THREE.MeshStandardMaterial({ color: css("--girdle"), roughness: 0.7 });
+const ghostMat = new THREE.MeshBasicMaterial({ color: 0x8a8678, wireframe: true, transparent: true, opacity: 0.18 });
+for (const m of D.meshes) {
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(b64(m.vertices, Float32Array), 3));
+  geo.setIndex(new THREE.BufferAttribute(b64(m.faces, Uint32Array), 1));
+  geo.computeVertexNormals();
+  groups[m.joint].add(new THREE.Mesh(geo, GIRDLE.has(m.name) ? girdleMat : boneMat));
+  if (GIRDLE.has(m.name)) {
+    const g = new THREE.Group(); g.matrixAutoUpdate = false; g.add(new THREE.Mesh(geo, ghostMat)); scene.add(g);
+    ghostGroups.push([m.joint, g]);
+  }
+}
+const sphere = (r, c) => new THREE.Mesh(new THREE.SphereGeometry(r, 20, 14), new THREE.MeshStandardMaterial({ color: c, roughness: 0.4 }));
+const ghDot = sphere(0.009, css("--gh")); scene.add(ghDot);
+const acDot = sphere(0.006, css("--accent")); scene.add(acDot);
+const iaDot = sphere(0.006, css("--accent")); scene.add(iaDot);
+const cuffMat = new THREE.MeshStandardMaterial({ color: css("--gh"), roughness: 0.5, transparent: true, opacity: 0.4, side: THREE.DoubleSide });  // cuffs: same green on both pages
+const cuffs = [0, 1].map((k) => { const r = k ? 0.042 : 0.052; const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.06, 32, 1, true), cuffMat); c.matrixAutoUpdate = false; scene.add(c); return c; });
+const imuBox = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.012, 0.03), new THREE.MeshStandardMaterial({ color: css("--imu") })); imuBox.matrixAutoUpdate = false; scene.add(imuBox);
+
+const mat4 = (p) => new THREE.Matrix4().compose(new THREE.Vector3(p[0], p[1], p[2]), new THREE.Quaternion(p[3], p[4], p[5], p[6]), new THREE.Vector3(1, 1, 1));
+function lerpPose(a, b, t) {
+  const qa = new THREE.Quaternion(a[3], a[4], a[5], a[6]), qb = new THREE.Quaternion(b[3], b[4], b[5], b[6]);
+  qa.slerp(qb, t);
+  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t, qa.x, qa.y, qa.z, qa.w];
+}
+// cuff cylinders (three.js: along y) lie along the segment, which is the cuff frame's z axis
+const cuffAlong = new THREE.Matrix4().makeRotationX(Math.PI / 2);
+
+// ---------- state ----------
+let mv = "abduction", frameIdx = 15, rocking = false, playing = false, imuOn = true, phase = 0;
+const frames = () => D.movements[mv].frames;
+
+function rockSample(f, s) { // s in [-1, 1]
+  const R = f.rock, x = (s + 1) / 2 * (R.length - 1), i = Math.min(Math.floor(x), R.length - 2), t = x - i;
+  return { joints: R[i].joints.map((p, k) => lerpPose(p, R[i + 1].joints[k], t)), imu: lerpPose(R[i].imu, R[i + 1].imu, t) };
+}
+
+function apply() {
+  const f = frames()[frameIdx];
+  const s = rocking ? Math.sin(phase) : 0;
+  const pose = rocking ? rockSample(f, s) : { joints: f.joints, imu: f.imu };
+  pose.joints.forEach((p, j) => groups[j].matrix.copy(mat4(p)));
+  for (const [j, g] of ghostGroups) { g.visible = rocking; g.matrix.copy(mat4(f.joints[j])); }
+  imuBox.visible = imuOn; imuBox.matrix.copy(mat4(pose.imu));
+  // points: move the marked points with their bodies (scapula for acromion and inferior angle; GH centre with the scapula)
+  const scapJ = D.joint_names.indexOf("scapulothoracic");
+  const rel = new THREE.Matrix4().copy(mat4(pose.joints[scapJ])).multiply(mat4(f.joints[scapJ]).invert());
+  ghDot.position.fromArray(f.gh).applyMatrix4(rel);
+  acDot.position.fromArray(f.ac).applyMatrix4(rel);
+  iaDot.position.fromArray(f.ia).applyMatrix4(rel);
+  // cuffs: carried by the arm, which follows the GH centre
+  const humJ = D.joint_names.indexOf("GlenoHumeral");
+  const relArm = new THREE.Matrix4().copy(mat4(pose.joints[humJ])).multiply(mat4(f.joints[humJ]).invert());
+  f.cuffs.forEach((c, k) => cuffs[k].matrix.copy(relArm.clone().multiply(mat4(c)).multiply(cuffAlong)));
+  scene.updateMatrixWorld(true);
+}
+
+function updatePanel() {
+  const f = frames()[frameIdx], end = f.rock[f.rock.length - 1], start = f.rock[0];
+  const mm = (k) => Math.max(end[k], start[k]);
+  $("elevLabel").textContent = f.elev.toFixed(0) + "°";
+  $("r_ia").textContent = "±" + mm("ia_mm").toFixed(0) + " mm";
+  $("r_ac").textContent = "±" + mm("ac_mm").toFixed(0) + " mm";
+  $("r_gh").textContent = "±" + mm("gh_mm").toFixed(1) + " mm";
+  $("r_tilt").textContent = imuOn ? "±" + mm("tilt_deg").toFixed(0) + "°" : "off";
+  const rows = [["σ₁", f.sigma[0], "#b4b2ab"], ["σ₂", f.sigma[1], "#b4b2ab"], ["σ₃ robot", f.sigma[2], css("--robot")]];
+  if (imuOn) rows.push(["σ₃ + IMU", f.sigma_imu[2], css("--imu")]);
+  $("bars").innerHTML = rows.map(([n, v, c]) => `<span>${n}</span><span class="bar"><i style="width:${Math.min(100, v / 2 * 100)}%;background:${c}"></i></span><span class="num">${v < 0.1 ? v.toFixed(3) : v.toFixed(2)}</span>`).join("");
+  drawPlot();
+}
+
+// ---------- plot ----------
+function drawPlot() {
+  const C = D.movements[mv].sigma_curves, W = 1000, H = 260, L = 48, Rr = 12, T = 12, B = 34;
+  const [x0, x1] = D.movements[mv].range, y1 = 2.0;
+  const X = (v) => L + (v - x0) / (x1 - x0) * (W - L - Rr), Y = (v) => T + (1 - v / y1) * (H - T - B);
+  const path = (m) => { let d = "", pen = false; C.elev.forEach((e, i) => { const v = m[i]; if (v == null) { pen = false; return; } d += (pen ? "L" : "M") + X(e).toFixed(1) + "," + Y(v).toFixed(1); pen = true; }); return d; };
+  const band = (k) => { const m = C[k].mean, h = C[k].ci, up = [], lo = []; C.elev.forEach((e, i) => { if (m[i] != null) { up.push([X(e), Y(m[i] + h[i])]); lo.push([X(e), Y(Math.max(0, m[i] - h[i]))]); } }); return "M" + up.concat(lo.reverse()).map((p) => p[0].toFixed(1) + "," + p[1].toFixed(1)).join("L") + "Z"; };
+  const series = [["s1", "#b4b2ab", 1.4], ["s2", "#b4b2ab", 1.4], ["s3", css("--robot"), 2.2]];
+  if (imuOn) series.push(["s3_imu", css("--imu"), 2.2]);
+  const f = frames()[frameIdx];
+  let g = "";
+  for (let v = 0; v <= 2.0001; v += 0.5) g += `<line x1="${L}" x2="${W - Rr}" y1="${Y(v)}" y2="${Y(v)}" stroke="${css("--line")}"/><text x="${L - 8}" y="${Y(v) + 4}" text-anchor="end" font-size="13" fill="${css("--muted")}">${v.toFixed(1)}</text>`;
+  for (let v = Math.ceil(x0 / 30) * 30; v <= x1; v += 30) g += `<text x="${X(v)}" y="${H - 12}" text-anchor="middle" font-size="13" fill="${css("--muted")}">${v}°</text>`;
+  g += `<text x="${(L + W) / 2}" y="${H}" text-anchor="middle" font-size="13" fill="${css("--muted")}">arm elevation while raising</text>`;
+  for (const [k, c, w] of series) g += `<path d="${band(k)}" fill="${c}" opacity="0.18"/><path d="${path(C[k].mean)}" fill="none" stroke="${c}" stroke-width="${w}"/>`;
+  g += `<line x1="${X(f.elev)}" x2="${X(f.elev)}" y1="${T}" y2="${H - B}" stroke="${css("--ink")}" stroke-width="1" stroke-dasharray="3 3"/>`;
+  $("plotSvg").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Singular values of the GH centre against arm elevation">${g}</svg>`;
+  $("leg_imu").style.opacity = imuOn ? 1 : 0.35;
+}
+
+// ---------- controls ----------
+document.querySelectorAll("[data-mv]").forEach((b) => b.addEventListener("click", () => {
+  mv = b.dataset.mv; document.querySelectorAll("[data-mv]").forEach((x) => x.setAttribute("aria-pressed", x === b));
+  frameIdx = Math.min(frameIdx, frames().length - 1); $("frame").max = frames().length - 1; apply(); updatePanel();
+}));
+$("frame").addEventListener("input", (e) => { frameIdx = +e.target.value; apply(); updatePanel(); });
+$("rock").addEventListener("click", () => { rocking = !rocking; $("rock").setAttribute("aria-pressed", rocking); phase = 0; apply(); });
+$("imuToggle").addEventListener("change", (e) => { imuOn = e.target.checked; apply(); updatePanel(); });
+$("play").addEventListener("click", () => { playing = !playing; $("play").setAttribute("aria-pressed", playing); $("play").textContent = playing ? "Pause" : "Play"; });
+
+function resize() { const w = host.clientWidth, h = host.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(host);
+// camera: in front and to the right of the right shoulder (thorax frame: x anterior, y up, z right)
+$("frame").max = frames().length - 1; $("frame").value = frameIdx;
+const target = new THREE.Vector3().fromArray(frames()[15].gh).add(new THREE.Vector3(0, -0.12, -0.08));
+camera.position.copy(target).add(new THREE.Vector3(0.75, 0.25, 0.75)); controls.target.copy(target); controls.update();
+
+let last = performance.now(), acc = 0;
+function tick(now) {
+  const dt = (now - last) / 1000; last = now;
+  if (rocking) { phase += dt * 2.2; }
+  if (playing) { acc += dt; if (acc > 0.06) { acc = 0; frameIdx = (frameIdx + 1) % frames().length; $("frame").value = frameIdx; updatePanel(); } }
+  if (rocking || playing) apply();
+  controls.update(); renderer.render(scene, camera);
+  requestAnimationFrame(tick);
+}
+resize(); apply(); updatePanel(); requestAnimationFrame(tick);
+window.__ready = true;
+</script>
+</body>
+</html>
