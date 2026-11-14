@@ -243,10 +243,10 @@ $("play").addEventListener("click", () => { playing = !playing; $("play").setAtt
 
 function resize() { const w = host.clientWidth, h = host.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
 new ResizeObserver(resize).observe(host);
-// camera: in front and to the right of the right shoulder (thorax frame: x anterior, y up, z right)
+// camera: in front of the subject (thorax frame: x anterior, y up, z right)
 $("frame").max = frames().length - 1; $("frame").value = frameIdx;
 const target = new THREE.Vector3().fromArray(frames()[15].gh).add(new THREE.Vector3(0, -0.12, -0.08));
-camera.position.copy(target).add(new THREE.Vector3(0.75, 0.25, 0.75)); controls.target.copy(target); controls.update();
+camera.position.copy(target).add(new THREE.Vector3(1.05, 0.2, 0.0)); controls.target.copy(target); controls.update();
 
 let last = performance.now(), acc = 0;
 function tick(now) {
