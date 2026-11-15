@@ -49,7 +49,7 @@ label.slider input { width: 100%; }
 .prose p { margin: 0 0 12px; }
 .how { margin: 0 0 28px; font-size: 15px; }
 .how h2 { margin-top: 0; }
-.how ol { margin: 0 0 12px; padding-left: 20px; }
+.how ul { margin: 0 0 12px; padding-left: 20px; }
 .how li { margin: 0 0 8px; }
 .how a { color: var(--both); }
 footer { color: var(--muted); font-size: 13px; margin-top: 40px; border-top: 1px solid var(--line); padding-top: 16px; }
@@ -60,18 +60,15 @@ a { color: var(--both); }
 <main>
   <p style="margin:0 0 12px;font-size:14px"><a href="../" style="color:var(--muted);text-decoration:none">← Overview</a></p>
   <h1>Shoulder girdle estimation from robot and IMU data</h1>
-  <p class="lede">A generic exoskeleton follows recorded movements; its cuffs are the green rings. The shoulder girdle is estimated from the cuff poses alone (purple), with a thorax IMU (orange), and with a thorax and a scapula IMU (blue). White bones: ground truth.</p>
+  <p class="lede">An exoskeleton holds the arm with two cuffs (green rings). From its joint angles it knows where the cuffs are, but it cannot see the shoulder girdle (clavicle and scapula). We reconstruct the girdle by fitting a shoulder model so that its arm sits in the cuffs:</p>
 
   <div class="prose how">
-    <h2>How it works</h2>
-    <ol>
-      <li><b>Ground truth.</b> A recorded movement from the dataset of Seth et al. (abduction, flexion or a shrug) is played on the thoracoscapular shoulder model: thorax, clavicle, scapula, humerus and forearm (white bones). The scapula moves on the thorax and is connected to the clavicle at the acromioclavicular (AC) joint.</li>
-      <li><b>Robot.</b> A generic arm exoskeleton (two girdle joints, three shoulder joints whose axes meet at the robot GH centre, and an elbow joint) is attached to the arm only through two cuffs, on the upper arm and on the forearm (green rings). In every frame its joints are solved so that the cuffs follow the arm. Like a real robot, it then knows only its joint angles, and from them the poses of its cuffs. Frames where the cuffs stay more than 10&nbsp;mm off the arm are out of reach and are not scored.</li>
-      <li><b>Estimation (model IK).</b> In every frame, the same shoulder model is fitted to the measurements: the model's arm is placed into the two cuffs while the AC joint stays closed and the pose changes smoothly from the previous frame. The three cases differ only in the extra sensors: <i>cuffs only</i>, with the thorax free (purple); <i>+ thorax IMU</i>, which fixes the thorax orientation (orange); and <i>+ thorax and scapula IMU</i>, where the scapula IMU gives only the direction of gravity in the scapula frame, as an accelerometer would (blue). The coloured bones are the estimated clavicle and scapula.</li>
-      <li><b>Robot GH centre.</b> The simplest estimate, without a model: the acromion is assumed to rise and fall with the robot GH centre. It gives no scapula orientation, so it appears only in the elevation plot.</li>
-      <li><b>Plots.</b> Acromion elevation is the height of the acromion relative to the thorax, from the first frame; scapular upward rotation is the model's rotation of the scapula that turns the glenoid upwards. The RMS errors are taken over the moving frames within reach.</li>
-    </ol>
-    <p>The cuffs fix the arm, but the arm meets the girdle only at the GH joint, so a scapula rotation about an axis near the GH centre barely moves the cuffs (see the <a href="../site/">observability analysis</a>). The model then has to guess, and its guess also absorbs trunk motion. The thorax IMU removes the trunk motion; the scapula IMU fixes the scapula orientation. The sensors are ideal and the model is the same as the one that generated the data, so the errors come only from what the sensors can observe.</p>
+    <ul>
+      <li><b style="color:var(--robot)">Cuffs only</b>: the thorax is unknown, and scapula rotations about an axis near the GH centre barely move the cuffs, so the model has to guess.</li>
+      <li><b style="color:var(--thorax)">+ thorax IMU</b>: the thorax orientation is measured, so trunk motion is no longer mistaken for girdle motion.</li>
+      <li><b style="color:var(--both)">+ thorax and scapula IMU</b>: the scapula IMU gives the direction of gravity in the scapula, which fixes its rotation.</li>
+    </ul>
+    <p>The coloured bones are the reconstructed girdle, the white bones the true one. Simulated data from Seth et al., ideal sensors, generic exoskeleton (not the one in the paper).</p>
   </div>
 
   <div class="grid">
