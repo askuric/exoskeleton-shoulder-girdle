@@ -61,9 +61,9 @@ a { color: var(--imu); }
 
   <div class="prose how">
     <ul>
-      <li><b>Singular values</b> (σ₁ ≥ σ₂ ≥ σ₃, mm/°): how far the GH centre, and with it the cuffs, moves per degree of girdle motion, with the thorax fixed. A small σ₃ means that some girdle motion is nearly invisible to the robot.</li>
-      <li><b style="color:var(--robot)">Least observable direction</b>: the girdle motion behind σ₃, mostly a scapula rotation about an axis near the GH centre. Press the button to see it: the scapula swings by centimetres while the cuffs barely move.</li>
-      <li><b style="color:var(--imu)">+ scapula IMU</b> (blue box): a gravity-only IMU on the scapula senses this rotation. With its tilt on the same scale (1° = 1 mm), σ₃ rises.</li>
+      <li>The <b>singular values</b> (σ₁ ≥ σ₂ ≥ σ₃, mm/°) measure how far the GH centre, and with it the cuffs, moves per degree of girdle motion, with the thorax fixed. A small σ₃ means that some girdle motion is nearly invisible to the robot.</li>
+      <li>The <b style="color:var(--robot)">least observable direction</b> is the girdle motion behind σ₃. It is mostly a scapula rotation about an axis near the GH centre. Press the button to see it: the scapula swings by centimetres while the cuffs barely move.</li>
+      <li>A gravity-only <b style="color:var(--imu)">scapula IMU</b> (blue box) senses this rotation. When its tilt is put on the same scale (1° = 1 mm), σ₃ rises.</li>
     </ul>
   </div>
 
@@ -107,7 +107,7 @@ a { color: var(--imu); }
   </div>
 
   <div class="prose">
-    <p>Simulated with the thoracoscapular shoulder model; ideal cuffs fixed to the arm. Model and data: Seth et al., <a href="https://simtk.org/projects/thoracoscapular">simtk.org/projects/thoracoscapular</a>.</p>
+    <p>The analysis uses the thoracoscapular shoulder model, with ideal cuffs fixed to the arm. Model and data: Seth et al., <a href="https://simtk.org/projects/thoracoscapular">simtk.org/projects/thoracoscapular</a>.</p>
     <p>The interactive visualisations were developed with the help of AI models (Claude, Anthropic).</p>
   </div>
   

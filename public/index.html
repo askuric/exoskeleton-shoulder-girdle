@@ -28,23 +28,23 @@ a.card span { color: var(--accent); font-weight: 600; font-size: 15px; }
 <body>
 <main>
   <h1>Shoulder girdle estimation with an upper-limb exoskeleton</h1>
-  <p class="lede">Observability and estimation of shoulder girdle motion from the cuff poses of an arm-attached exoskeleton, with and without IMUs.</p>
+  <p class="lede">These pages show how well an exoskeleton attached to the arm can observe and estimate shoulder girdle motion from the poses of its cuffs, with and without IMUs.</p>
 
   <div class="cards">
     <a class="card" href="site/">
       <h2>1. Observability analysis</h2>
-      <p>Singular values of the GH-centre Jacobian and the least observable girdle motion.</p>
+      <p>Shows which girdle motions the cuffs can sense, and which motion they miss.</p>
       <span>Observability →</span>
     </a>
     <a class="card" href="site_robot/">
       <h2>2. Estimation from robot and IMU data</h2>
-      <p>Model IK from the cuff poses, with a thorax IMU, and with a thorax and a scapula IMU.</p>
+      <p>Reconstructs the girdle from the cuff poses, with and without IMUs.</p>
       <span>Estimation →</span>
     </a>
   </div>
 
   <div class="prose">
-    <p>Companion to an ICORR paper (in review). Simulation only, generic exoskeleton. Model and data: Seth et al., <a href="https://simtk.org/projects/thoracoscapular">simtk.org/projects/thoracoscapular</a>.</p>
+    <p>This is a companion to an ICORR paper (in review). It uses simulated data only and a generic exoskeleton. Model and data: Seth et al., <a href="https://simtk.org/projects/thoracoscapular">simtk.org/projects/thoracoscapular</a>.</p>
     <p>The interactive visualisations were developed with the help of AI models (Claude, Anthropic).</p>
   </div>
 </main>

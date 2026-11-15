@@ -64,11 +64,11 @@ a { color: var(--both); }
 
   <div class="prose how">
     <ul>
-      <li><b style="color:var(--robot)">Cuffs only</b>: the thorax is unknown, and scapula rotations about an axis near the GH centre barely move the cuffs, so the model has to guess.</li>
-      <li><b style="color:var(--thorax)">+ thorax IMU</b>: the thorax orientation is measured, so trunk motion is no longer mistaken for girdle motion.</li>
-      <li><b style="color:var(--both)">+ thorax and scapula IMU</b>: the scapula IMU gives the direction of gravity in the scapula, which fixes its rotation.</li>
+      <li>With the <b style="color:var(--robot)">cuffs only</b>, the thorax is unknown, and scapula rotations about an axis near the GH centre barely move the cuffs, so the model has to guess.</li>
+      <li>With a <b style="color:var(--thorax)">thorax IMU</b>, the thorax orientation is measured, so trunk motion is no longer mistaken for girdle motion.</li>
+      <li>With a <b style="color:var(--both)">thorax and a scapula IMU</b>, the scapula IMU also gives the direction of gravity in the scapula, which fixes its rotation.</li>
     </ul>
-    <p>The coloured bones are the reconstructed girdle, the white bones the true one. Simulated data from Seth et al., ideal sensors, generic exoskeleton (not the one in the paper).</p>
+    <p>The coloured bones show the reconstructed girdle, and the white bones the true one. The data are simulated from the dataset of Seth et al., with ideal sensors and a generic exoskeleton (not the one in the paper).</p>
   </div>
 
   <div class="grid">
@@ -99,7 +99,7 @@ a { color: var(--both); }
   </div>
 
   <div class="prose">
-    <p>Errors: RMS over the moving frames within the robot's reach. Ideal sensors; the exoskeleton is not the one in the paper, so the numbers differ. Model and data: Seth et al., <a href="https://simtk.org/projects/thoracoscapular">simtk.org/projects/thoracoscapular</a>.</p>
+    <p>The errors are RMS values over the moving frames within the robot's reach. They differ from the paper because the exoskeleton is different. Model and data: Seth et al., <a href="https://simtk.org/projects/thoracoscapular">simtk.org/projects/thoracoscapular</a>.</p>
     <p>The interactive visualisations were developed with the help of AI models (Claude, Anthropic).</p>
   </div>
   
