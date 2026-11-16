@@ -1,0 +1,15 @@
+name: shoulder-girdle
+channels:
+  - conda-forge
+dependencies:
+  - python=3.13
+  - numpy
+  - matplotlib
+  - tk
+  - pip
+  - pip:
+      - pin==4.1.0            # pinocchio
+      - pin-pink==4.4.0       # differential IK (the solver of the paper)
+      - quadprog==0.1.14
+      - meshcat==0.3.2
+      - git+https://gitlab.inria.fr/biomeca/pin-actuation.git@e38d27d3983e2ceb0ad1ea4c30150154ee91775b   # OpenSim model import
