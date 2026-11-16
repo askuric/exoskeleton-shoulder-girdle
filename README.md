@@ -50,7 +50,7 @@ python scripts/observability.py --trial flx21 --plot   # singular values along a
 python scripts/observability.py --trial flx21          # 3D viewer (opens in the browser) + sliders
 ```
 
-<img src="./public/images/python_obs.png" width="400">
+<img src="./public/images/python_obs.png" width="600">
 
 ### Script exoskeleton_live.py
 
@@ -61,7 +61,7 @@ Either replayeb from the Seth et al. dataset or by interacting with sliders live
 python scripts/exoskeleton_live.py                     # move the robot joints with sliders
 python scripts/exoskeleton_live.py --trial abd21       # the robot follows a recorded movement
 ```
-<img src="./public/images/python_est.png" width="400">
+<img src="./public/images/python_est.png" width="600">
 
 
 Trials are named `abd`, `flx` or `shrug` followed by a number, e.g. `abd01`, `flx21`, `shrug02`.
