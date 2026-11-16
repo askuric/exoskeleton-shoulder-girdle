@@ -3,8 +3,6 @@
 Companion code and interactive pages to an ICORR paper (in review) on estimating shoulder girdle elevation with an upper-limb exoskeleton.
 
 
-An exoskeleton holds the arm with two cuffs. It knows where the cuffs are, but it cannot see the shoulder girdle (clavicle and scapula), which joins the arm only at the glenohumeral (GH) joint. This repository shows which girdle motions the cuffs can sense, and how well the girdle can be reconstructed from the cuffs alone, with a thorax IMU, and with a thorax and a scapula IMU.
-
 ### Online live demo
 
 <a href="https://askuric.github.io/exoskeleton-shoulder-girdle/">
