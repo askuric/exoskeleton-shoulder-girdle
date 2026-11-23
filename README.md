@@ -1,6 +1,14 @@
 # Shoulder girdle estimation with an upper-limb exoskeleton
 
+Estimating Shoulder Girdle Elevation with a Shoulder Exoskeleton: Observability, Simulation and Experimental Evaluation<br>
+Antun Skuric, Peter Wolf, Linda Dyer, Samy Bouaicha, Robert Riener
+
 Companion code and interactive pages to an ICORR paper (in review) on estimating shoulder girdle elevation with an upper-limb exoskeleton.
+
+
+The paper treats the subject of observability of the shoulder girdle based on the state of the exoskeletons that atacht to the human arm only. 
+The main question is how accurate their shoulder girgle estimation is, what other sensors do they might need. The paper's results use ANYexo as a reference platfom, 
+but the results would hold for any robot with the similar form facotr, and would be even more constraining for robots that do not have shoulder girdle DOFs.
 
 
 ### Online live demo
@@ -48,7 +56,9 @@ python scripts/observability.py --trial flx21 --plot   # singular values along a
 python scripts/observability.py --trial flx21          # 3D viewer (opens in the browser) + sliders
 ```
 
-<img src="./public/images/python_obs.png" width="600">
+<img src="./public/images/minimal.gif" width="600">
+
+
 
 ### Script exoskeleton_live.py
 
