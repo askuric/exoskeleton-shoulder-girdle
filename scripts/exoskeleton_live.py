@@ -6,7 +6,8 @@ Two modes:
     python scripts/exoskeleton_live.py --trial abd21   # the robot follows a recorded movement of the dataset
 
 The robot only knows its joint angles, and from them the poses of its two cuffs. From these, the shoulder model is
-fitted (model IK) with the cuffs only, with a thorax IMU, or with a thorax and a scapula IMU.
+fitted (model IK) with the cuffs only, with a scapula IMU, or with a thorax and a scapula IMU. The user is assumed
+seated: the thorax position is held.
 
 With the sliders there is no true shoulder, so the IMU readings are set with sliders too: the thorax orientation
 and the tilt of the scapula IMU (from its reading with the arm down). With --trial the true shoulder is shown in
@@ -26,8 +27,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))   # so that `girdle
 from girdle import CASES, Exoskeleton, Shoulder, estimate_case, sensors  # noqa: E402
 from girdle.robot import JOINTS  # noqa: E402
 
-LABELS = {"robot": "cuffs only", "thorax": "+ thorax IMU", "both": "+ thorax and scapula IMU"}
-COLOURS = {"robot": (0.38, 0.31, 0.84), "thorax": (0.92, 0.41, 0.20), "both": (0.16, 0.47, 0.84)}
+LABELS = {"robot": "cuffs only", "scapula": "+ scapula IMU", "both": "+ thorax and scapula IMU"}
+COLOURS = {"robot": (0.38, 0.31, 0.84), "scapula": (0.92, 0.41, 0.20), "both": (0.16, 0.47, 0.84)}
 GREEN, GREY = 0x1BAF7A, 0x8D929A
 START_DEG = (0, 0, 30, 0, 0, 85)   # initial robot joint angles in the sliders mode (deg), in the order of JOINTS
 
@@ -142,8 +143,8 @@ class Scene:
         scapula = s.frame("/bodyset/scapula")
         T = np.eye(4); T[:3, :3] = scapula.rotation; T[:3, 3] = scapula.act(self.scapula_imu_offset)
         v["imu/scapula"].set_transform(T)
-        v["imu/thorax"].set_property("visible", case in ("thorax", "both"))
-        v["imu/scapula"].set_property("visible", case == "both")
+        v["imu/thorax"].set_property("visible", case == "both")
+        v["imu/scapula"].set_property("visible", case in ("scapula", "both"))
 
 
 def main():
@@ -159,9 +160,11 @@ def main():
     if args.trial:
         times, Q = shoulder.load_trial(args.trial, step=2)
         cases = CASES
+        thorax_start = Q[0][:6].copy()
     else:
         cases = CASES
         thorax_ref, gravity_ref = sensors(shoulder, shoulder.q_ref)   # IMU readings of an upright user, arm down
+        thorax_start = thorax_ref.copy()
 
     state = {"q_robot": robot.q0.copy(), "estimates": {c: shoulder.q_ref.copy() for c in CASES}, "playing": False}
     ac_ref = shoulder.acromion_height(shoulder.q_ref)
@@ -182,7 +185,7 @@ def main():
             state["q_robot"] = np.radians([v.get() for v in joint_vars])
             # thorax IMU: rotation coordinates of the thorax; scapula IMU: its reading with the arm down, after
             # turning the scapula by the slider angles (about the thorax forward and lateral axes)
-            thorax = thorax_ref + np.radians([v.get() for v in thorax_vars])
+            thorax = thorax_ref + np.r_[0.0, 0.0, 0.0, np.radians([v.get() for v in thorax_vars])]
             turn = pin.exp3(np.radians(scapula_vars[0].get()) * -robot.anterior
                             + np.radians(scapula_vars[1].get()) * robot.right)
             shoulder.update(shoulder.q_ref)
@@ -192,7 +195,7 @@ def main():
         for c in cases:                                    # a few steps, since the sliders can jump
             q = state["estimates"][c]
             for _ in range(3):
-                q = estimate_case(shoulder, c, q, q, cuffs, imu)
+                q = estimate_case(shoulder, c, q, q, cuffs, imu, thorax_start)
             state["estimates"][c] = q
 
         case = case_var.get()

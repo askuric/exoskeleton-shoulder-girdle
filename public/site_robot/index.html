@@ -8,7 +8,7 @@
 <style>
 :root {
   --bg: #fbfbf9; --panel: #ffffff; --ink: #1a1a19; --muted: #6b6a63; --line: #e6e5df;
-  --gh: #1baf7a; --robot: #6250d6; --thorax: #eb6834; --both: #2a78d6; --bone: #e9e5dc; --metal: #5d6168;
+  --gh: #1baf7a; --robot: #6250d6; --scapula: #eb6834; --both: #2a78d6; --bone: #e9e5dc; --metal: #5d6168;
 }
 :root[data-theme="dark"] { --bg: #161615; --panel: #1f1f1d; --ink: #ecebe6; --muted: #a3a29b; --line: #34332f; --bone: #d9d4c8; --metal: #8d929a; }
 * { box-sizing: border-box; }
@@ -64,10 +64,11 @@ a { color: var(--both); }
 
   <div class="prose how">
     <ul>
-      <li>With the <b style="color:var(--robot)">cuffs only</b>, the thorax is unknown, and scapula rotations about an axis near the GH centre barely move the cuffs, so the model has to guess.</li>
-      <li>With a <b style="color:var(--thorax)">thorax IMU</b>, the thorax orientation is measured, so trunk motion is no longer mistaken for girdle motion.</li>
-      <li>With a <b style="color:var(--both)">thorax and a scapula IMU</b>, the scapula IMU also gives the direction of gravity in the scapula, which fixes its rotation.</li>
+      <li>With the <b style="color:var(--robot)">cuffs only</b>, scapula rotations about an axis near the GH centre barely move the cuffs, so the model has to guess, and trunk motion can be mistaken for girdle motion.</li>
+      <li>With a gravity-only <b style="color:var(--scapula)">scapula IMU</b>, the direction of gravity in the scapula is measured, which fixes most of its rotation. The thorax is assumed to stay as it was at the start.</li>
+      <li>With a <b style="color:var(--both)">thorax and a scapula IMU</b>, the thorax orientation is measured too, so trunk motion is no longer mistaken for girdle motion.</li>
     </ul>
+    <p>The user is assumed seated, so the thorax position is held in all cases.</p>
     <p>The coloured bones show the reconstructed girdle, and the white bones the true one. The data are simulated from the dataset of Seth et al., with ideal sensors and a generic exoskeleton (not the one in the paper).</p>
   </div>
 
@@ -120,7 +121,7 @@ $("loading").remove();
 
 const METHODS = [
   { key: "robot", label: "Robot only", colour: css("--robot") },
-  { key: "thorax", label: "+ thorax IMU", colour: css("--thorax") },
+  { key: "scapula", label: "+ scapula IMU", colour: css("--scapula") },
   { key: "both", label: "+ thorax + scapula IMU", colour: css("--both") },
 ];
 
@@ -217,8 +218,8 @@ function apply() {
     est[m.key].forEach((g, j) => { g.visible = vis; if (vis) g.matrix.copy(mat4(f.est[m.key][j])); });
   }
   drawRobot(f.robot);
-  // IMUs of the shown method: thorax IMU on the sternum side, scapula IMU on the scapula (true pose, as measured)
-  imus[0].visible = method !== "robot"; imus[1].visible = method === "both";
+  // IMUs of the shown method: thorax IMU on the sternum (both IMUs only), scapula IMU on the scapula (true pose, as measured)
+  imus[0].visible = method === "both"; imus[1].visible = method !== "robot";
   imus[0].matrix.copy(mat4(f.imus[0])); imus[1].matrix.copy(mat4(f.human[2]).multiply(scapImuLocal));
   scene.updateMatrixWorld(true);
 }

@@ -3,10 +3,12 @@
 The solver is the one of the paper: differential IK with pink (QP solved by quadprog). In every frame the shoulder
 model is fitted so that its arm sits in the measured cuffs (FrameTask), the AC loop is an equality constraint
 (PointCoincidenceTask), the joint limits are inequality constraints, and a weak PostureTask keeps the pose close to
-the previous frame. The three cases differ only in the extra sensors:
-    "robot"   cuffs only, the thorax is free
-    "thorax"  + thorax IMU: the thorax orientation is known (pinned through its limits), its position is not
-    "both"    + thorax IMU and a gravity-only scapula IMU: the direction of gravity in the scapula is known (GravityTask)
+the previous frame. The user is assumed seated, so the thorax position is held in every case (pinned through its
+limits). The three cases differ in the extra sensors:
+    "robot"    cuffs only: the thorax orientation is estimated
+    "scapula"  + gravity-only scapula IMU: the direction of gravity in the scapula is known (GravityTask); without a
+               thorax IMU the thorax is held at its starting pose
+    "both"     + thorax IMU and gravity-only scapula IMU: the thorax orientation is measured
 """
 import numpy as np
 import pink
@@ -15,7 +17,7 @@ from pink.tasks import FrameTask, PostureTask, Task
 
 from .model import UP
 
-CASES = ("robot", "thorax", "both")
+CASES = ("robot", "scapula", "both")
 
 W_ORIENTATION = 0.05   # cuff orientation, relative to cuff position (per rad vs per m)
 W_GRAVITY = 0.2        # scapula IMU gravity direction
@@ -66,11 +68,11 @@ class GravityTask(Task):
         return f"GravityTask({self.frame_name})"
 
 
-def estimate(shoulder, q, q_previous, cuffs, thorax_rotation=None, gravity=None):
+def estimate(shoulder, q, q_previous, cuffs, thorax=None, gravity=None):
     """One frame of model IK.
 
     cuffs            measured cuff poses (pin.SE3, upper arm and forearm)
-    thorax_rotation  thorax IMU: the thorax rotation coordinates (3 values of q), or None
+    thorax           the 6 thorax coordinates of q (3 translations, 3 rotations), NaN where free, or None (all free)
     gravity          scapula IMU: the up direction in the scapula IMU frame, or None
     """
     s, model = shoulder, shoulder.model
@@ -90,14 +92,14 @@ def estimate(shoulder, q, q_previous, cuffs, thorax_rotation=None, gravity=None)
         tasks.append(gravity_task)
     constraints = [PointCoincidenceTask("ac", "acc")]
 
-    # the thorax is free (wide limits), or its orientation is pinned through its limits
+    # the thorax is free (wide limits), and its given coordinates are pinned through their limits
     saved = model.lowerPositionLimit.copy(), model.upperPositionLimit.copy()
     model.lowerPositionLimit[:6], model.upperPositionLimit[:6] = -10.0, 10.0
+    pinned = [] if thorax is None else [i for i in range(6) if np.isfinite(thorax[i])]
     q = np.clip(q, model.lowerPositionLimit, model.upperPositionLimit)
-    if thorax_rotation is not None:
-        q[3:6] = thorax_rotation
-        model.lowerPositionLimit[3:6] = thorax_rotation - 1e-7
-        model.upperPositionLimit[3:6] = thorax_rotation + 1e-7
+    for i in pinned:
+        q[i] = thorax[i]
+        model.lowerPositionLimit[i], model.upperPositionLimit[i] = thorax[i] - 1e-7, thorax[i] + 1e-7
     try:
         configuration = pink.Configuration(model, s.data, q.copy())
         for _ in range(ITERATIONS):
@@ -114,21 +116,22 @@ def estimate(shoulder, q, q_previous, cuffs, thorax_rotation=None, gravity=None)
         q_new = configuration.q.copy()
     finally:
         model.lowerPositionLimit[:], model.upperPositionLimit[:] = saved
-    if thorax_rotation is not None:
-        q_new[3:6] = thorax_rotation
+    for i in pinned:
+        q_new[i] = thorax[i]
     return q_new if np.all(np.isfinite(q_new)) else q
 
 
 def sensors(shoulder, q_true):
-    """Ideal IMU measurements from a true pose: thorax rotation coordinates and gravity in the scapula IMU frame."""
+    """Ideal measurements from a true pose: the thorax coordinates (position: seated user; rotations: thorax IMU) and
+    gravity in the scapula IMU frame."""
     s = shoulder
     s.update(q_true)
-    return q_true[3:6].copy(), s.frame(s.IMU).rotation.T @ UP
+    return q_true[:6].copy(), s.frame(s.IMU).rotation.T @ UP
 
 
-def estimate_case(shoulder, case, q, q_previous, cuffs, imu):
-    """estimate() for one of CASES; imu = (thorax_rotation, gravity) from sensors()."""
-    thorax_rotation, gravity = imu
-    return estimate(shoulder, q, q_previous, cuffs,
-                    thorax_rotation=None if case == "robot" else thorax_rotation,
-                    gravity=gravity if case == "both" else None)
+def estimate_case(shoulder, case, q, q_previous, cuffs, imu, thorax_start):
+    """estimate() for one of CASES; imu = (thorax, gravity) from sensors(), thorax_start the thorax coordinates at the
+    start (used by "scapula", which has no thorax IMU)."""
+    thorax, gravity = imu
+    thorax = {"robot": np.r_[thorax[:3], np.full(3, np.nan)], "scapula": thorax_start, "both": thorax}[case]
+    return estimate(shoulder, q, q_previous, cuffs, thorax=thorax, gravity=None if case == "robot" else gravity)

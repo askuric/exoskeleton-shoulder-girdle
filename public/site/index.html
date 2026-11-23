@@ -8,7 +8,7 @@
 <style>
 :root {
   --bg: #fbfbf9; --panel: #ffffff; --ink: #1a1a19; --muted: #6b6a63; --line: #e6e5df;
-  --gh: #1baf7a; --robot: #6250d6; --imu: #2a78d6; --bone: #e9e5dc; --girdle: #c9d8f0; --accent: #e8221b; --metal: #5d6168;
+  --gh: #1baf7a; --robot: #6250d6; --imu: #eb6834; --bone: #e9e5dc; --girdle: #c9d8f0; --accent: #e8221b; --metal: #5d6168;
 }
 :root[data-theme="dark"] { --bg: #161615; --panel: #1f1f1d; --ink: #ecebe6; --muted: #a3a29b; --line: #34332f; --bone: #d9d4c8; --girdle: #8fb0e6; --metal: #8d929a; }
 * { box-sizing: border-box; }
@@ -63,7 +63,7 @@ a { color: var(--imu); }
     <ul>
       <li>The <b>singular values</b> (σ₁ ≥ σ₂ ≥ σ₃, mm/°) measure how far the GH centre, and with it the cuffs, moves per degree of girdle motion, with the thorax fixed. A small σ₃ means that some girdle motion is nearly invisible to the robot.</li>
       <li>The <b style="color:var(--robot)">least observable direction</b> is the girdle motion behind σ₃. It is mostly a scapula rotation about an axis near the GH centre. Press the button to see it: the scapula swings by centimetres while the cuffs barely move.</li>
-      <li>A gravity-only <b style="color:var(--imu)">scapula IMU</b> (blue box) senses this rotation. When its tilt is put on the same scale (1° = 1 mm), σ₃ rises.</li>
+      <li>A gravity-only <b style="color:var(--imu)">scapula IMU</b> (orange box) senses this rotation. When its tilt is put on the same scale (1° = 1 mm), σ₃ rises.</li>
     </ul>
   </div>
 
