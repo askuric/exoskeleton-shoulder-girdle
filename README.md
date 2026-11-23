@@ -10,6 +10,8 @@ The paper treats the subject of observability of the shoulder girdle based on th
 The main question is how accurate their shoulder girgle estimation is, what other sensors do they might need. The paper's results use ANYexo as a reference platfom, 
 but the results would hold for any robot with the similar form facotr, and would be even more constraining for robots that do not have shoulder girdle DOFs.
 
+Due to NDA raisons, this repository do not include ANYexo model and the visualisation and the code is based on a generic (stick figure) exoskeleton. 
+
 
 ### Online live demo
 
